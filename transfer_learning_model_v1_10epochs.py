@@ -17,9 +17,8 @@ import os
 print(tf.__version__)
 
 import pathlib
-#data_root = pathlib.Path('/content/drive/My Drive/Images2')
-data_root = pathlib.Path(r'C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\images2')
-test_root = pathlib.Path(r'C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\images2_test')
+data_root = pathlib.Path(r'##PATH TO YOUR TRAINING IMAGES##')
+test_root = pathlib.Path(r'##PATH TO YOUR TESTING IMAGES##')
 print(data_root)
 print(test_root)
 
@@ -45,6 +44,7 @@ train_datagen = keras.preprocessing.image.ImageDataGenerator(
                 rescale=1./255,
                 validation_split=0.2)
 
+# These convert the images to tensors to feed into the neural network
 train_generator = train_datagen.flow_from_directory(
     directory=data_root,
     target_size=(image_size, image_size),
@@ -79,7 +79,7 @@ test_generator = test_datagen.flow_from_directory(
     shuffle=False,
     seed=42
 )
-
+# This section isn't vital but allows performance monitoring and graph plotting of training data over time
 class CollectBatchStats(tf.keras.callbacks.Callback):
   def __init__(self):
     self.batch_losses = []
@@ -99,6 +99,7 @@ base_model = tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE,
 base_model.trainable = False
 base_model.summary()
 
+# Add a new classifier layer on top
 model = tf.keras.Sequential([
   base_model,
   keras.layers.GlobalAveragePooling2D(),
@@ -113,7 +114,7 @@ model.summary()
 
 batch_stats_callback = CollectBatchStats()
 
-checkpoint_path = r"C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\transfer_learning_model_v1_10epochs\cp.ckpt"
+checkpoint_path = r"##CHECKPOINT SAVE PATH##\cp.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Create checkpoint callback
@@ -125,6 +126,7 @@ epochs = 10
 steps_per_epoch = train_generator.n // batch_size
 validation_steps = validation_generator.n // batch_size
 
+# Use the generators to fit the model 
 history = model.fit_generator(train_generator,
                               steps_per_epoch = steps_per_epoch,
                               epochs=epochs,
@@ -133,7 +135,7 @@ history = model.fit_generator(train_generator,
                               validation_steps=validation_steps,
                               callbacks = [cp_callback, batch_stats_callback])
 
-model.save(r'C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\transfer_learning_model_v1_10epochs\my_model.h5')
+model.save(r'##TRAINED MODEL SAVE PATH##\my_model.h5')
 
 STEP_SIZE_TRAIN=train_generator.n//train_generator.batch_size
 STEP_SIZE_VALID=validation_generator.n//validation_generator.batch_size
@@ -153,7 +155,8 @@ labels = (train_generator.class_indices)
 labels = dict((v,k) for k,v in labels.items())
 predictions = [labels[k] for k in predicted_class_indices]
 
+#Create a new CSV of the file name and it's predicted class. This code is handy for Kaggle submissions
 filenames=test_generator.filenames
 results=pd.DataFrame({"Filename":filenames,
                       "Predictions":predictions})
-results.to_csv(r"C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\results.csv",index=False)
+results.to_csv(r"##RESULTS CSV SAVE PATH##\results.csv",index=False)
